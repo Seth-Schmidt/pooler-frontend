@@ -70,8 +70,8 @@
             <button on:click={() => {location.href ="/";
             //showInfo.set(true);
           }}>
-              <img class="block lg:hidden h-8 w-auto" src="./powerloom_square_white.png" alt="PowerLoom">
-              <img class="hidden lg:block h-8 w-auto" src="./powerloom_square_white.png" alt="PowerLoom">
+              <img class="block lg:hidden h-8 w-auto" src="./Powerloom.PFP.Light.png" alt="PowerLoom">
+              <img class="hidden lg:block h-16 w-auto" src="./Powerloom.PFP.Light.png" alt="PowerLoom">
             </button>
           </div>
           <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
@@ -207,12 +207,12 @@
             <div class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-sm sm:w-full sm:p-6">
               <div>
                 <div class="mx-auto flex items-center justify-center">
-                  <img class="h-40" src="./powerloom_white.png" alt="PowerLoom logo">
+                  <img class="h-40" src="./Powerloom.PFP.Light.png" alt="PowerLoom logo">
                 </div>
                 <div class="text-center">
                   <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">{APP_NAME} Info by PowerLoom Protocol</h3>
                   <div class="mt-2">
-                    <p class="text-sm text-gray-500">We snapshot on-chain data from <a href="{INFO_URL}" class="text-black hover:text-gray-500" target="_blank" rel="noopener noreferer">{APP_NAME}</a> to give you actionable insights in a transparent way. Read more about this on our <a href="https://github.com/PowerLoom/pooler" target="_blank" rel="noopener noreferer" class="text-black hover:text-gray-500">Pooler repo</a>. If something seems off, feel free to ping us on <a href="https://discord.gg/WkYeZK3hC8" class="text-black hover:text-gray-500" target="_blank" rel="noopener noreferer">Discord</a>.<br/><strong>New:</strong> You can now participate in the PowerLoom network to contribute as a snapshotter! <a href="https://github.com/PowerLoom/deploy" target="_blank" rel="noopener noreferer" class="text-black hover:text-gray-500">Click here</a> for details.</p>
+                    <p class="text-sm text-gray-500">We snapshot on-chain data from <a href="{INFO_URL}" class="text-black hover:text-gray-500" target="_blank" rel="noopener noreferer">{APP_NAME}</a> to give you actionable insights in a transparent way. Read more about this on our <a href="https://github.com/PowerLoom/pooler" target="_blank" rel="noopener noreferer" class="text-black hover:text-gray-500">Pooler repo</a>. If something seems off, feel free to ping us on <a href="https://discord.gg/powerloom" class="text-black hover:text-gray-500" target="_blank" rel="noopener noreferer">Discord</a>.<br/><strong>New:</strong> You can now participate in Powerloom Network's Incentivized Testnet to contribute as a snapshotter! <a href="https://coinlist.co/powerloom-testnet" target="_blank" rel="noopener noreferer" class="text-black hover:text-gray-500">Visit Coinlist</a> for details.</p>
                   </div>
                 </div>
               </div>
@@ -242,7 +242,7 @@
     <footer class="bg-white">
       <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
         <div class="flex justify-center py-4 space-x-6 md:order-3">
-          <a href="https://discord.gg/WkYeZK3hC8" target="_blank" rel="noopener noreferer">
+          <a href="https://discord.gg/powerloom" target="_blank" rel="noopener noreferer">
           <img class="h-12" src="./join_discord.png" alt="Discord" />
         </a>
         </div>
