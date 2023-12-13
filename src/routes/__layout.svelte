@@ -70,8 +70,8 @@
             <button on:click={() => {location.href ="/";
             //showInfo.set(true);
           }}>
-              <img class="block lg:hidden h-8 w-auto" src="./Powerloom.PFP.Light.png" alt="PowerLoom">
-              <img class="hidden lg:block h-16 w-auto" src="./Powerloom.PFP.Light.png" alt="PowerLoom">
+              <img class="block lg:hidden h-6 w-auto" src="./powerloom-logo.svg" alt="PowerLoom">
+              <img class="hidden lg:block h-7 w-auto" src="./powerloom-logo.svg" alt="PowerLoom">
             </button>
           </div>
           <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
@@ -207,7 +207,7 @@
             <div class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-sm sm:w-full sm:p-6">
               <div>
                 <div class="mx-auto flex items-center justify-center">
-                  <img class="h-40" src="./Powerloom.PFP.Light.png" alt="PowerLoom logo">
+                  <img class="h-40" src="./Powerloom-logo.svg" alt="PowerLoom logo">
                 </div>
                 <div class="text-center">
                   <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">{APP_NAME} Info by PowerLoom Protocol</h3>
