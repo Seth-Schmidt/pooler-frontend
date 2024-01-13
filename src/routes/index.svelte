@@ -13,15 +13,20 @@
     currency: 'USD',
   });
 
+  let billion = 1000000000
+
   let assetsData = null;
+  let statsData = null;
   let epochInfo = null;
-  
+  let showChangeData = true;
   const API_PREFIX = import.meta.env.VITE_API_PREFIX || 'static'; //change this to AXIOS config later 
   let recentReset = import.meta.env.VITE_RECENT_RESET == 'true';
 	const APP_NAME = import.meta.env.VITE_APP_NAME || "AAVE";
   
   let assets_cid = '';
   let assets_project_id = import.meta.env.VITE_TOP_ASSETS_PROJECT_ID;
+  let stats_cid = '';
+  let market_stats_project_id = import.meta.env.VITE_MARKET_STATS_PROJECT_ID;
   
 
   onMount(async () => {
@@ -75,6 +80,39 @@
     catch (e){
       console.error('top assets cid', e);
     }
+
+    try {
+      response = await axios.get(API_PREFIX+`/cid/${epochInfo.epochId}/${market_stats_project_id}/`);
+      console.log('got market stats cid', response.data);
+      if (response.data) {
+        stats_cid = response.data;
+      } else {
+        throw new Error(JSON.stringify(response.data));
+      }
+    }
+    catch (e){
+      console.error('market stats cid', e);
+    }
+
+    try {
+      console.log("Requesting: ")
+      console.log(API_PREFIX+`/data/${epochInfo.epochId}/${market_stats_project_id}/`)
+      response = await axios.get(API_PREFIX+`/data/${epochInfo.epochId}/${market_stats_project_id}/`);
+      console.log('got market stats', response.data);
+      if (response.data) {
+        statsData = response.data;
+        if (!statsData.complete){
+          recentReset = true;
+        }
+      } else {
+        throw new Error(JSON.stringify(response.data));
+      }
+    }
+    catch (e){
+      console.error('market stats', e);
+    }
+
+
   });
 
 </script>
@@ -96,14 +134,14 @@
     <div class="ml-3">
       <h3 class="text-sm font-medium text-yellow-800">Reset in progress</h3>
       <div class="mt-2 text-sm text-yellow-700">
-        <p>This node recently started snapshotting from scratch - volume and other 24 hour data will catch up soon!</p>
+        <p>This node recently started snapshotting from scratch - 24 hour data will catch up soon!</p>
       </div>
     </div>
   </div>
 </div>
 {/if}
 
-{#if assetsData }
+
 <div class="rounded-md bg-blue-50 p-4">
   <div class="flex">
     <div class="flex-shrink-0">
@@ -121,19 +159,152 @@
   </div>
   
 </div>
+
+{#if stats_cid}
 <div class="flex pull-right ">
 
-<a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" target="_blank" href="https://cloudflare-ipfs.com/ipfs/{assets_cid}">
+<a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" target="_blank" href="https://cloudflare-ipfs.com/ipfs/{stats_cid}">
   <!-- Heroicon name: solid/phone -->
 
   <svg role="img" class="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>IPFS icon</title><path d="M12 0L1.608 6v12L12 24l10.392-6V6zm-1.073 1.445h.001a1.8 1.8 0 002.138 0l7.534 4.35a1.794 1.794 0 000 .403l-7.535 4.35a1.8 1.8 0 00-2.137 0l-7.536-4.35a1.795 1.795 0 000-.402zM21.324 7.4c.109.08.226.147.349.201v8.7a1.8 1.8 0 00-1.069 1.852l-7.535 4.35a1.8 1.8 0 00-.349-.2l-.009-8.653a1.8 1.8 0 001.07-1.851zm-18.648.048l7.535 4.35a1.8 1.8 0 001.069 1.852v8.7c-.124.054-.24.122-.349.202l-7.535-4.35a1.8 1.8 0 00-1.069-1.852v-8.7c.124-.054.24-.122.35-.202z"/></svg>
   <span> Data </span>
 </a>
 </div>
-<div>
+{/if}
 
+{#if statsData}
+<div>
+  <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="relative bg-white pt-5 px-4 pb-3 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
+      <dt>
+        <div class="absolute bg-indigo-500 rounded-md p-3">
+          <!-- Heroicon name: outline/users -->
+          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="m14.556 7.799-2.43 5.482A2 2 0 0 0 14 15.98h3.114a2.001 2.001 0 0 0 1.873-2.7l-2.43-5.482v-.925c.33.07.664.107 1 .107a1 1 0 1 0 0-2 3.378 3.378 0 0 1-2.267-1.006 8.567 8.567 0 0 0-2.79-1.571 3 3 0 0 0-5.888.034c-.827.32-1.585.8-2.228 1.412a3.6 3.6 0 0 1-2.827 1.13 1 1 0 0 0 0 2 7.379 7.379 0 0 0 1-.07v.889L.127 13.28A2 2 0 0 0 2 15.98h3.114a2.001 2.001 0 0 0 1.873-2.7l-2.43-5.482v-1.57a8.355 8.355 0 0 0 1.133-.865 5.713 5.713 0 0 1 1.282-.882 2.993 2.993 0 0 0 1.585 1.316V17.98h-7a1 1 0 1 0 0 2h16a1 1 0 0 0 0-2h-7V5.797a3 3 0 0 0 1.62-1.384 7.17 7.17 0 0 1 1.89 1.143c.16.124.327.25.5.377 0 .017-.01.03-.01.048v1.818Zm-5-3.818a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>
+          </svg>
+        </div>
+        <p class="ml-16 text-sm font-medium text-gray-500 truncate">Total Market Size 24H</p>
+      </dt>
+      <dd class="ml-16 pb-6 flex items-baseline sm:pb-3">
+        <p class="text-xl font-semibold text-gray-900">
+          {USDollar.format((statsData.totalMarketSize / billion)) + "B"}
+        </p>
+        {#if showChangeData}
+        {#if statsData.marketChange24h == undefined || statsData.marketChange24h > 0}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+          <!-- Heroicon name: solid/arrow-sm-up -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Increased by
+          </span>
+          {`${(statsData.marketChange24h).toFixed(2)}%`}
+        </p>
+        {:else}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
+          <!-- Heroicon name: solid/arrow-sm-down -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Decreased by
+          </span>
+          {`${(statsData.marketChange24h).toFixed(2)}%`}
+        </p>
+        {/if}
+        {/if}
+      </dd>
+    </div>
+
+    <div class="relative bg-white pt-5 px-4 pb-3 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
+      <dt>
+        <div class="absolute bg-indigo-500 rounded-md p-3">
+          <!-- Heroicon name: outline/cursor-click -->
+          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 18">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 1v11m0 0 4-4m-4 4L4 8m11 4v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3"/>
+          </svg>
+        </div>
+        <p class="ml-16 text-sm font-medium text-gray-500 truncate">Total Available 24H</p>
+      </dt>
+      <dd class="ml-16 pb-6 flex items-baseline sm:pb-3">
+        <p class="text-xl font-semibold text-gray-900">
+          {USDollar.format((statsData.totalAvailable / billion)) + "B"}
+        </p>
+        {#if showChangeData}
+        {#if statsData.availableChange24h == undefined || statsData.availableChange24h > 0}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+          <!-- Heroicon name: solid/arrow-sm-up -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Increased by
+          </span>
+          {`${(statsData.availableChange24h).toFixed(2)}%`}
+        </p>
+        {:else}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
+          <!-- Heroicon name: solid/arrow-sm-down -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Decreased by
+          </span>
+          {`${(statsData.availableChange24h).toFixed(2)}%`}
+        </p>
+        {/if}
+        {/if}
+      </dd>
+    </div>
+
+    <div class="relative bg-white pt-5 px-4 pb-3 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
+      <dt>
+        <div class="absolute bg-indigo-500 rounded-md p-3">
+          <!-- Heroicon name: outline/mail-open -->
+          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12V1m0 0L4 5m4-4 4 4m3 5v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3"/>
+          </svg>
+        </div>
+        <p class="ml-16 text-sm font-medium text-gray-500 truncate">Total Borrowed 24H</p>
+      </dt>
+      <dd class="ml-16 pb-6 flex items-baseline sm:pb-3">
+        <p class="text-xl font-semibold text-gray-900">
+          {USDollar.format((statsData.totalBorrows / billion)) + "B"}
+        </p>
+        {#if showChangeData}
+        {#if statsData.borrowChange24h == undefined || statsData.borrowChange24h > 0}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+          <!-- Heroicon name: solid/arrow-sm-up -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Increased by
+          </span>
+          {`${(statsData.borrowChange24h).toFixed(2)}%`}
+        </p>
+        {:else}
+        <p class="ml-2 flex items-baseline text-sm font-semibold text-red-600">
+          <!-- Heroicon name: solid/arrow-sm-down -->
+          <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="sr-only">
+            Decreased by
+          </span>
+          {`${(statsData.borrowChange24h).toFixed(2)}%`}
+        </p>
+        {/if}
+        {/if}
+      </dd>
+    </div>
+
+  </dl>
 </div>
 {/if}
+
 <!-- This example requires Tailwind CSS v2.0+ -->
 <div class="pt-4">
 <div class="bg-white px-4 py-5 shadow overflow-hidden border-b border-gray-200 sm:rounded-lg sm:px-6 ">
@@ -146,11 +317,19 @@
         <div class="ml-4">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Top Assets</h3>
           <p class="text-sm text-gray-500">
-            {#if epochInfo }Synced to <a href="{$explorerPrefix}/block/{epochInfo.epochEnd}"class="text-indigo-800" target="_blank">{epochInfo.epochEnd}</a> <Time relative timestamp={epochInfo.timestamp} />
+            {#if epochInfo }Synced to <a href="{$explorerPrefix}/block/{epochInfo.epochEnd}"class="text-indigo-800" target="_blank">{epochInfo.epochEnd}</a> <Time relative timestamp={(epochInfo.timestamp * 1000)} />
             {/if}
           </p>
         </div>
       </div>
+    </div>
+    <div class="ml-4 mt-4 flex-shrink-0 flex">
+      <a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" target="_blank" href="https://cloudflare-ipfs.com/ipfs/{assets_cid}">
+        <!-- Heroicon name: solid/phone -->
+        <svg role="img" class="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>IPFS icon</title><path d="M12 0L1.608 6v12L12 24l10.392-6V6zm-1.073 1.445h.001a1.8 1.8 0 002.138 0l7.534 4.35a1.794 1.794 0 000 .403l-7.535 4.35a1.8 1.8 0 00-2.137 0l-7.536-4.35a1.795 1.795 0 000-.402zM21.324 7.4c.109.08.226.147.349.201v8.7a1.8 1.8 0 00-1.069 1.852l-7.535 4.35a1.8 1.8 0 00-.349-.2l-.009-8.653a1.8 1.8 0 001.07-1.851zm-18.648.048l7.535 4.35a1.8 1.8 0 001.069 1.852v8.7c-.124.054-.24.122-.349.202l-7.535-4.35a1.8 1.8 0 00-1.069-1.852v-8.7c.124-.054.24-.122.35-.202z"/></svg>
+        <span> Data </span>
+      </a>
+      
     </div>
   </div>
 </div>
