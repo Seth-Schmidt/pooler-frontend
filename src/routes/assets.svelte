@@ -146,6 +146,9 @@ onMount(async () => {
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Borrow APY, variable
               </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                More Info
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -172,6 +175,11 @@ onMount(async () => {
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
                 {parseFloat(asset.variableApy).toFixed(2)+"%"}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                <a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="/details/{asset.address}">
+                  Details
+                </a>
               </td>
             </tr>
             {/each}

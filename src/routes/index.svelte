@@ -141,25 +141,6 @@
 </div>
 {/if}
 
-
-<div class="rounded-md bg-blue-50 p-4">
-  <div class="flex">
-    <div class="flex-shrink-0">
-      <!-- Heroicon name: solid/information-circle -->
-      <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-      </svg>
-    </div>
-    <div class="ml-3 flex-1 md:flex md:justify-between">
-      <p class="text-sm text-blue-700">We currently show stats for a specific list of assets with high liquidity. Dynamic support for other assets will be added soon!</p>
-      <p class="mt-3 text-sm md:mt-0 md:ml-6">
-        <a href="/assets" class="whitespace-nowrap font-medium text-blue-700 hover:text-blue-600">Current Assets <span aria-hidden="true">&rarr;</span></a>
-      </p>
-  </div>
-  </div>
-  
-</div>
-
 {#if stats_cid}
 <div class="flex pull-right ">
 
@@ -359,6 +340,9 @@
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Borrow APY, variable
               </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                More Info
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -386,14 +370,16 @@
               <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
                 {parseFloat(asset.variableApy).toFixed(2)+"%"}
               </td>
+              <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                <a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="/details/{asset.address}">
+                  Details
+                </a>
+              </td>
             </tr>
             {/each}
             {/if}
           </tbody>
       </table>
-      <div class="">
-        <a href="/assets" class="w-full flex justify-center items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"> View all </a>
-      </div>
 </div>
     </div>
   </div>
