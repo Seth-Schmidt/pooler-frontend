@@ -3,6 +3,7 @@
     import { page } from '$app/stores';
     import axios from "axios";
     import { onMount } from 'svelte';
+    import { Chart } from 'chart.js/auto';
 
     function DollarFormat(value) 
     {
@@ -35,12 +36,17 @@
     let util = null;
     
     let asset_project_prefix = import.meta.env.VITE_ASSET_PROJECT_PREFIX;
+    let apr_6h_project_prefix = import.meta.env.VITE_APR_6H_PROJECT_ID;
     let assets_project_id = import.meta.env.VITE_TOP_ASSETS_PROJECT_ID;
     let namespace = import.meta.env.VITE_PROJECT_NAMESPACE;
     let project_id = `${asset_project_prefix}:${address}:${namespace}`
+    let apr_6h_project_id = `${apr_6h_project_prefix}:${address}:${namespace}`
 
     const API_PREFIX = import.meta.env.VITE_API_PREFIX || 'static';
     const APP_NAME = import.meta.env.VITE_APP_NAME || "AAVE";
+
+    let chartData
+    let context
 
     onMount(async () => {
         console.log('API', API_PREFIX);
@@ -111,6 +117,67 @@
 
         util = topData.totalVariableDebt.token_debt / topData.totalAToken.token_supply
         util = parseFloat(util * 100).toFixed(2)
+
+        chartData = {
+            //Type of the chart
+            type: 'line', 
+            data: {
+                //labels on x-axis
+                labels: [], 
+                datasets: [{
+                    //The label for the dataset which appears in the legend and tooltips.
+                    label: 'Price',
+                    //data for the line
+                    data: [],
+                    //styling of the chart
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    //make sure Y-axis starts at 0
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+            }
+        }
+
+        let aprResponse;
+        // set startime to current epoch minus 1 day in seconds
+        let start_time = epochInfo.timestamp - 86400
+        // step size of 6hours in seconds
+        let step_seconds = 600
+
+        try {
+            console.log("Requesting: ")
+            console.log(API_PREFIX+`/time_series/${epochInfo.epochId}/${start_time}/${step_seconds}/${apr_6h_project_id}/`)
+            response = await axios.get(API_PREFIX+`/time_series/${epochInfo.epochId}/${start_time}/${step_seconds}/${apr_6h_project_id}/`);
+            console.log('got 6h data', response.data);
+            if (response.data) {
+                aprResponse = response.data;
+            } else {
+                throw new Error(JSON.stringify(response.data));
+            }
+        }
+        catch (e){
+            console.error('6h apr', e);
+        }
+
+        aprResponse.map(({avgLiquidityRate, avgVariableRate, timestamp}) => {
+            console.log(avgLiquidityRate, avgVariableRate, timestamp)
+            chartData.data.datasets[0].data.push(avgLiquidityRate)
+            chartData.data.labels.push(timestamp)
+        })
+
+        const ctx = context.getContext('2d');
+        var myChart = new Chart(ctx, chartData);
 
   });
 
@@ -223,6 +290,14 @@
                             </p>
                         </dd>
                     </div>
+                    
+                    <div class="grid grid-cols-subgrid col-span-3">
+                        <div class="w-2/5 h-44 border m-auto">
+                            <!-- <canvas use:chartRender={chartData}></canvas> -->
+                            <canvas bind:this={context} width={400} height={400} />
+                        </div>
+                    </div>
+
                     <div class="pt-4">
                         <dt>
                             <p class="text-base font-medium text-gray-500 truncate">Max LTV</p>
