@@ -34,6 +34,7 @@
     let available = null;
     let price = null;
     let util = null;
+    let aprData;
     
     let asset_project_prefix = import.meta.env.VITE_ASSET_PROJECT_PREFIX;
     let apr_6h_project_prefix = import.meta.env.VITE_APR_6H_PROJECT_ID;
@@ -45,8 +46,76 @@
     const API_PREFIX = import.meta.env.VITE_API_PREFIX || 'static';
     const APP_NAME = import.meta.env.VITE_APP_NAME || "AAVE";
 
-    let chartData
-    let context
+    const dateOptions = { month: 'short', day: 'numeric', hour: 'numeric' };
+
+    const chartData = {
+        //Type of the chart
+        type: 'line', 
+        data: {
+            //labels on x-axis
+            labels: [], 
+            datasets: [{
+                //The label for the dataset which appears in the legend and tooltips.
+                label: '',
+                //data for the line
+                data: [],
+                //styling of the chart
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                //make sure Y-axis starts at 0
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        padding: 20,
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 5,
+                    },
+                },
+                x: {
+                    ticks: {
+                        padding: 20,
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 5,
+                    },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                title: {
+                    display: true,
+                    text: ""
+                }
+            }
+            
+        }
+    }
+
+    // clone chartData to new objects
+    let supplyChartData = JSON.parse(JSON.stringify(chartData))
+    let variableChartData = JSON.parse(JSON.stringify(chartData))
+
+    supplyChartData.options.plugins.title.text = "Supply APR"
+    variableChartData.options.plugins.title.text = "Variable APR"
+
+    let labels = []
+    let supplyContext
+    let variableContext
+    let date
 
     onMount(async () => {
         console.log('API', API_PREFIX);
@@ -118,42 +187,10 @@
         util = topData.totalVariableDebt.token_debt / topData.totalAToken.token_supply
         util = parseFloat(util * 100).toFixed(2)
 
-        chartData = {
-            //Type of the chart
-            type: 'line', 
-            data: {
-                //labels on x-axis
-                labels: [], 
-                datasets: [{
-                    //The label for the dataset which appears in the legend and tooltips.
-                    label: 'Price',
-                    //data for the line
-                    data: [],
-                    //styling of the chart
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    //make sure Y-axis starts at 0
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-            }
-        }
-
-        let aprResponse;
-        // set startime to current epoch minus 1 day in seconds
-        let start_time = epochInfo.timestamp - 86400
+        // set startime to current epoch minus 5 day in seconds
+        let start_time = epochInfo.timestamp - 432000
         // step size of 6hours in seconds
-        let step_seconds = 600
+        let step_seconds = 21600
 
         try {
             console.log("Requesting: ")
@@ -161,7 +198,7 @@
             response = await axios.get(API_PREFIX+`/time_series/${epochInfo.epochId}/${start_time}/${step_seconds}/${apr_6h_project_id}/`);
             console.log('got 6h data', response.data);
             if (response.data) {
-                aprResponse = response.data;
+                aprData = response.data;
             } else {
                 throw new Error(JSON.stringify(response.data));
             }
@@ -170,14 +207,21 @@
             console.error('6h apr', e);
         }
 
-        aprResponse.map(({avgLiquidityRate, avgVariableRate, timestamp}) => {
+        aprData.reverse().map(({avgLiquidityRate, avgVariableRate, timestamp}) => {
             console.log(avgLiquidityRate, avgVariableRate, timestamp)
-            chartData.data.datasets[0].data.push(avgLiquidityRate)
-            chartData.data.labels.push(timestamp)
+            supplyChartData.data.datasets[0].data.push(parseFloat(avgLiquidityRate * 100).toFixed(2))
+            variableChartData.data.datasets[0].data.push(parseFloat(avgVariableRate * 100).toFixed(2))
+            date = new Date(timestamp * 1000)
+            labels.push(date.toLocaleDateString("en-US", dateOptions))
         })
 
-        const ctx = context.getContext('2d');
-        var myChart = new Chart(ctx, chartData);
+        supplyChartData.data.labels = labels
+        variableChartData.data.labels = labels
+
+        const supplyCtx = supplyContext.getContext('2d');
+        const variableCtx = variableContext.getContext('2d');
+        const supplyChart = new Chart(supplyCtx, supplyChartData);
+        const variableChar = new Chart(variableCtx, variableChartData)
 
   });
 
@@ -253,7 +297,7 @@
                 <div class="pb-3">
                     <p class="text-xl underline font-bold text-gray-900">Supply Data</p>
                 </div>
-                <dl class="grid grid-cols-3 grid-rows-2 auto-cols-auto sm:grid-cols-2 lg:grid-cols-3">
+                <dl class="grid grid-cols-3 grid-flow-row auto-cols-auto auto-rows-min sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                         <dt>
                             <p class="text-base font-medium text-gray-500 truncate">Total Supplied</p>
@@ -291,10 +335,10 @@
                         </dd>
                     </div>
                     
-                    <div class="grid grid-cols-subgrid col-span-3">
-                        <div class="w-2/5 h-44 border m-auto">
+                    <div class="grid-cols-subgrid col-span-3">
+                        <div class="p-4 flex-auto">
                             <!-- <canvas use:chartRender={chartData}></canvas> -->
-                            <canvas bind:this={context} width={400} height={400} />
+                            <canvas bind:this={supplyContext} />
                         </div>
                     </div>
 
@@ -334,7 +378,7 @@
                     <div class="pb-3">
                         <p class="text-xl underline font-bold text-gray-900">Borrow Data</p>
                     </div>
-                    <dl class="grid grid-cols-3 grid-rows-2 auto-cols-auto sm:grid-cols-2 lg:grid-cols-3">
+                    <dl class="grid grid-cols-3 grid-flow-row auto-cols-auto auto-rows-min sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                             <dt>
                                 <p class="text-base font-medium text-gray-500 truncate">Total Borrowed</p>
@@ -371,6 +415,14 @@
                                 </p>
                             </dd>
                         </div>
+
+                        <div class="grid-cols-subgrid col-span-3">
+                            <div class="p-4 flex-auto">
+                                <!-- <canvas use:chartRender={chartData}></canvas> -->
+                                <canvas bind:this={variableContext} />
+                            </div>
+                        </div>
+
                         <div class="pt-4">
                             <dt>
                                 <p class="text-base font-medium text-gray-500 truncate">Reserve Factor</p>
