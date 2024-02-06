@@ -207,12 +207,13 @@
             console.error('6h apr', e);
         }
 
-        aprData.reverse().map(({avgLiquidityRate, avgVariableRate, timestamp}) => {
-            console.log(avgLiquidityRate, avgVariableRate, timestamp)
-            supplyChartData.data.datasets[0].data.push(parseFloat(avgLiquidityRate * 100).toFixed(2))
-            variableChartData.data.datasets[0].data.push(parseFloat(avgVariableRate * 100).toFixed(2))
-            date = new Date(timestamp * 1000)
-            labels.push(date.toLocaleDateString("en-US", dateOptions))
+        aprData.reverse().map(({avgLiquidityRate, avgVariableRate, timestamp, complete}) => {
+            if (complete) {
+                supplyChartData.data.datasets[0].data.push(parseFloat(avgLiquidityRate * 100).toFixed(2))
+                variableChartData.data.datasets[0].data.push(parseFloat(avgVariableRate * 100).toFixed(2))
+                date = new Date(timestamp * 1000)
+                labels.push(date.toLocaleDateString("en-US", dateOptions))
+            }
         })
 
         supplyChartData.data.labels = labels
