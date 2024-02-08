@@ -16,6 +16,8 @@
   let billion = 1000000000
 
   let assetsData = null;
+  let volumeData = null;
+  let volumeDataTrimmed = null;
   let statsData = null;
   let epochInfo = null;
   let showChangeData = true;
@@ -27,6 +29,8 @@
   let assets_project_id = import.meta.env.VITE_TOP_ASSETS_PROJECT_ID;
   let stats_cid = '';
   let market_stats_project_id = import.meta.env.VITE_MARKET_STATS_PROJECT_ID;
+  let assets_volume_project_id = import.meta.env.VITE_VOLUME_PROJECT_ID;
+  let volume_cid = '';
   
 
   onMount(async () => {
@@ -57,9 +61,9 @@
       console.log("Requesting: ")
       console.log(API_PREFIX+`/data/${epochInfo.epochId}/${assets_project_id}/`)
       response = await axios.get(API_PREFIX+`/data/${epochInfo.epochId}/${assets_project_id}/`);
-      console.log('got assets', response.data);
+      console.log('got assets data', response.data);
       if (response.data) {
-        assetsData = response.data;
+        assetsData = response.data.assets.slice(0, 5);
       } else {
         throw new Error(JSON.stringify(response.data));
       }
@@ -111,6 +115,42 @@
     catch (e){
       console.error('market stats', e);
     }
+
+    try {
+      console.log("Requesting: ")
+      console.log(API_PREFIX+`/data/${epochInfo.epochId}/${assets_volume_project_id}/`)
+      response = await axios.get(API_PREFIX+`/data/${epochInfo.epochId}/${assets_volume_project_id}/`);
+      console.log('got volume data', response.data);
+      if (response.data) {
+        volumeData = response.data;
+        if (!volumeData.complete){
+          recentReset = true;
+        }
+      } else {
+        throw new Error(JSON.stringify(response.data));
+      }
+    }
+    catch (e){
+      console.error('volume', e);
+    }
+
+    try {
+      response = await axios.get(API_PREFIX+`/cid/${epochInfo.epochId}/${assets_volume_project_id}/`);
+      console.log('got volume cid', response.data);
+      if (response.data) {
+        volume_cid = response.data;
+      } else {
+        throw new Error(JSON.stringify(response.data));
+      }
+    }
+    catch (e){
+      console.error('volume_cid', e);
+    }
+
+    volumeDataTrimmed = []
+    assetsData.map(({address}) => {
+      volumeDataTrimmed.push(volumeData.assets.find((x) => x.address == address))
+    })
 
 
   });
@@ -347,7 +387,7 @@
           </thead>
           <tbody>
             {#if assetsData}
-            {#each assetsData.assets as asset, index}
+            {#each assetsData as asset, index}
             <tr class={(index + 1)%2 == 0 ? "bg-gray-50" : "bg-white"}>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {index + 1}
@@ -380,7 +420,119 @@
             {/if}
           </tbody>
       </table>
+      <div class="">
+        <a href="/assets" class="w-full flex justify-center items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"> View all </a>
+      </div>
 </div>
+    </div>
+  </div>
+</div>
+
+<div class="pt-4">
+  <div class="bg-white px-4 py-5 shadow overflow-hidden border-b border-gray-200 sm:rounded-lg sm:px-6 ">
+    <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-nowrap">
+      <div class="ml-4 mt-4">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Asset Volume 24H</h3>
+            <p class="text-sm text-gray-500">
+              {#if epochInfo }Synced to <a href="{$explorerPrefix}/block/{epochInfo.epochEnd}"class="text-indigo-800" target="_blank">{epochInfo.epochEnd}</a> <Time relative timestamp={(epochInfo.timestamp * 1000)} />
+              {/if}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="ml-4 mt-4 flex-shrink-0 flex">
+        <a class="relative inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" target="_blank" href="https://cloudflare-ipfs.com/ipfs/{volume_cid}">
+          <svg role="img" class="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>IPFS icon</title><path d="M12 0L1.608 6v12L12 24l10.392-6V6zm-1.073 1.445h.001a1.8 1.8 0 002.138 0l7.534 4.35a1.794 1.794 0 000 .403l-7.535 4.35a1.8 1.8 0 00-2.137 0l-7.536-4.35a1.795 1.795 0 000-.402zM21.324 7.4c.109.08.226.147.349.201v8.7a1.8 1.8 0 00-1.069 1.852l-7.535 4.35a1.8 1.8 0 00-.349-.2l-.009-8.653a1.8 1.8 0 001.07-1.851zm-18.648.048l7.535 4.35a1.8 1.8 0 001.069 1.852v8.7c-.124.054-.24.122-.349.202l-7.535-4.35a1.8 1.8 0 00-1.069-1.852v-8.7c.124-.054.24-.122.35-.202z"/></svg>
+          <span> Data </span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="flex flex-col">
+  <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+      <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                #
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Borrowed
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Repayed
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Supplied
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Withdrawn
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if volumeDataTrimmed}
+            {#each volumeDataTrimmed as asset, index}
+            <tr class={(index + 1)%2 == 0 ? "bg-gray-50" : "bg-white"}>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {index + 1}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <div class="text-lg">{asset.name}</div>
+                <div class="text-sm">{asset.symbol}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {#if asset.totalBorrow.totalToken > 0}
+                <div class="text-lg">{asset.totalBorrow.totalToken.toLocaleString('en-US')}</div>
+                <div class="text-sm">{USDollar.format(asset.totalBorrow.totalUSD)}</div>
+                {:else}
+                <div class="text-lg"> - </div>
+                {/if}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                {#if asset.totalRepay.totalToken > 0}
+                <div class="text-lg">{asset.totalRepay.totalToken.toLocaleString('en-US')}</div>
+                <div class="text-sm">{USDollar.format(asset.totalRepay.totalUSD)}</div>
+                {:else}
+                <div class="text-lg"> - </div>
+                {/if}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {#if asset.totalSupply.totalToken > 0}
+                <div class="text-lg">{asset.totalSupply.totalToken.toLocaleString('en-US')}</div>
+                <div class="text-sm">{USDollar.format(asset.totalSupply.totalUSD)}</div>
+                {:else}
+                <div class="text-lg"> - </div>
+                {/if}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                {#if asset.totalWithdraw.totalToken > 0}
+                <div class="text-lg">{asset.totalWithdraw.totalToken.toLocaleString('en-US')}</div>
+                <div class="text-sm">{USDollar.format(asset.totalWithdraw.totalUSD)}</div>
+                {:else}
+                <div class="text-lg"> - </div>
+                {/if}
+              </td>
+            </tr>
+            {/each}
+            {/if}
+          </tbody>
+      </table>
+        <div class="">
+          <a href="/volume" class="w-full flex justify-center items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"> View all </a>
+        </div>
+        </div>
     </div>
   </div>
 </div>
