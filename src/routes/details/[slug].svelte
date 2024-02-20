@@ -24,6 +24,11 @@
 
     }
 
+    let USDollar = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    });
+
     let slug = $page.url.pathname.substr(1).split("/")[1];
     let address = slug.toLowerCase()
 
@@ -33,20 +38,19 @@
     let lastBlock = null;
     let available = null;
     let price = null;
-    let util = null;
     let aprData;
+    let resolutionInHours = 6
     
     let asset_project_prefix = import.meta.env.VITE_ASSET_PROJECT_PREFIX;
     let apr_6h_project_prefix = import.meta.env.VITE_APR_6H_PROJECT_ID;
-    let assets_project_id = import.meta.env.VITE_TOP_ASSETS_PROJECT_ID;
+    let top_assets_project_id = import.meta.env.VITE_TOP_ASSETS_PROJECT_ID;
     let namespace = import.meta.env.VITE_PROJECT_NAMESPACE;
     let project_id = `${asset_project_prefix}:${address}:${namespace}`
     let apr_6h_project_id = `${apr_6h_project_prefix}:${address}:${namespace}`
 
     const API_PREFIX = import.meta.env.VITE_API_PREFIX || 'static';
-    const APP_NAME = import.meta.env.VITE_APP_NAME || "AAVE";
 
-    const dateOptions = { month: 'short', day: 'numeric', hour: 'numeric' };
+    const dateOptions = { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
 
     const chartData = {
         //Type of the chart
@@ -105,16 +109,111 @@
         }
     }
 
+    const makeLabel = (tooltipItems) => {
+
+        if (topData) {
+
+            let label = ""
+            let amountToUtil = (parseFloat(tooltipItems.label) / 100) * topData.totalAToken.usd_supply
+                - topData.totalVariableDebt.usd_debt
+
+            if (amountToUtil > 0) {
+
+                label += "Borrow amount to reach " + tooltipItems.label + "%" + " utilization: "
+                label += USDollar.format(amountToUtil)
+
+            }
+
+            else {
+
+                label += "Repayment amount to reach " + tooltipItems.label + "%" + " utilization: "
+                label += USDollar.format(Math.abs(amountToUtil))
+
+            }
+
+            return label
+
+        } else {
+            return tooltipItems.label
+        }
+
+
+    }
+
+    const utilChartData = {
+        //Type of the chart
+        type: 'line', 
+        data: {
+            //labels on x-axis
+            labels: [], 
+            datasets: [{
+                //The label for the dataset which appears in the legend and tooltips.
+                label: '',
+                //data for the line
+                data: [],
+                //styling of the chart
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                //make sure Y-axis starts at 0
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        padding: 20,
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 5,
+                    },
+                },
+                x: {
+                    ticks: {
+                        padding: 20,
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 5,
+                    },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                title: {
+                    display: true,
+                    text: ""
+                },
+                tooltip: {
+                    callbacks: {
+                        label: makeLabel,
+                    }
+                }
+            }
+            
+        }
+    }
+
     // clone chartData to new objects
     let supplyChartData = JSON.parse(JSON.stringify(chartData))
     let variableChartData = JSON.parse(JSON.stringify(chartData))
 
     supplyChartData.options.plugins.title.text = "Supply APR"
     variableChartData.options.plugins.title.text = "Variable APR"
+    utilChartData.options.plugins.title.text = "Utilization"
 
     let labels = []
     let supplyContext
     let variableContext
+    let utilContext
     let date
 
     onMount(async () => {
@@ -155,8 +254,8 @@
 
         try {
             console.log("Requesting: ")
-            console.log(API_PREFIX+`/data/${epochInfo.epochId}/${assets_project_id}/`)
-            response = await axios.get(API_PREFIX+`/data/${epochInfo.epochId}/${assets_project_id}/`);
+            console.log(API_PREFIX+`/data/${epochInfo.epochId}/${top_assets_project_id}/`)
+            response = await axios.get(API_PREFIX+`/data/${epochInfo.epochId}/${top_assets_project_id}/`);
             console.log('got assets', response.data);
             if (response.data) {
                 topData = response.data;
@@ -184,11 +283,58 @@
                 assetData.availableLiquidity[lastBlock].usd_supply 
             )
 
-        util = topData.totalVariableDebt.token_debt / topData.totalAToken.token_supply
-        util = parseFloat(util * 100).toFixed(2)
+        const utilResolution = 200
+        const utilStep = 100 / utilResolution
+        const optimalRate = assetData.rateDetails[lastBlock].optimalRate * 100
+        const baseStableRate = assetData.rateDetails[lastBlock].baseStableRate
+        const baseVarRate = assetData.rateDetails[lastBlock].baseVarRate
+        const stableSlope1 = assetData.rateDetails[lastBlock].stableRateSlope1
+        const stableSlope2 = assetData.rateDetails[lastBlock].stableRateSlope2
+        const varSlope1 = assetData.rateDetails[lastBlock].varRateSlope1
+        const varSlope2 = assetData.rateDetails[lastBlock].varRateSlope2
 
-        // set startime to current epoch minus 5 day in seconds
-        let start_time = epochInfo.timestamp - 432000
+        const utilRates = []
+        for (let i = 0; i <= utilResolution; i++) {
+            const utilization = i * utilStep
+
+            if (utilization == 0) {
+                utilRates.push({
+                    stableRate: 0,
+                    variableRate: 0,
+                    utilization: utilization,
+                })
+            }
+            // current is below optimal rate
+            else if (utilization < optimalRate) {
+                const theoreticalStableAPY = baseStableRate + ((stableSlope1 * utilization) / optimalRate)
+                const theoreticalVarAPY = baseVarRate + ((varSlope1 * utilization) / optimalRate)
+                utilRates.push({
+                    stableRate: theoreticalStableAPY,
+                    variableRate: theoreticalVarAPY,
+                    utilization: utilization,
+                })
+            }
+            // current is above optimal rate
+            else {
+                const excess = (utilization - optimalRate) / (100 - optimalRate)
+                const theoreticalStableAPY = baseStableRate + stableSlope1 + (stableSlope2 * excess)
+                const theoreticalVarAPY = baseVarRate + varSlope1 + (varSlope2 * excess)
+                utilRates.push({
+                    stableRate: theoreticalStableAPY,
+                    variableRate: theoreticalVarAPY,
+                    utilization: utilization,
+                })
+            }
+        }
+
+        utilChartData.data.labels = utilRates.map(r => r.utilization)
+        utilChartData.data.datasets[0].data = utilRates.map(r => r.variableRate)
+
+        console.log("RATES: ")
+        console.log(utilRates)
+        
+        // set startime to current epoch minus 1 month in seconds
+        let start_time = epochInfo.timestamp - 2592000
         // step size of 6hours in seconds
         let step_seconds = 21600
 
@@ -206,23 +352,31 @@
         catch (e){
             console.error('6h apr', e);
         }
-
+        
+        // Build graph data for supply and variable debt
+        let hour
         aprData.reverse().map(({avgLiquidityRate, avgVariableRate, timestamp, complete}) => {
             if (complete) {
                 supplyChartData.data.datasets[0].data.push(parseFloat(avgLiquidityRate * 100).toFixed(2))
                 variableChartData.data.datasets[0].data.push(parseFloat(avgVariableRate * 100).toFixed(2))
                 date = new Date(timestamp * 1000)
-                labels.push(date.toLocaleDateString("en-US", dateOptions))
+                hour = date.getUTCHours() + Math.round(date.getUTCMinutes()/60)
+                date.setUTCMinutes(0, 0, 0)
+                date.setUTCHours(Math.floor(hour / resolutionInHours) * resolutionInHours)
+                labels.push(date.toUTCString("en-US"))
             }
         })
 
         supplyChartData.data.labels = labels
         variableChartData.data.labels = labels
 
+        // Build graphs
         const supplyCtx = supplyContext.getContext('2d');
         const variableCtx = variableContext.getContext('2d');
+        const utilCtx = utilContext.getContext('2d');
         const supplyChart = new Chart(supplyCtx, supplyChartData);
-        const variableChar = new Chart(variableCtx, variableChartData)
+        const variableChart = new Chart(variableCtx, variableChartData);
+        const utilChart = new Chart(utilCtx, utilChartData);
 
   });
 
@@ -269,7 +423,7 @@
                 </dt>
                 <dd class="">
                     <p class="text-l font-semibold text-gray-900">
-                    {util + "%"}
+                    {parseFloat(assetData.rateDetails[lastBlock].utilRate * 100).toFixed(2) + "%"}
                     </p>
                 </dd>
             </div>
@@ -479,14 +633,14 @@
                     <div class="pb-3">
                         <p class="text-xl underline font-bold text-gray-900">Utilization Data</p>
                     </div>
-                    <dl class="grid grid-cols-3 grid-rows-1 auto-cols-auto sm:grid-cols-2 lg:grid-cols-3">
+                    <dl class="grid grid-cols-2 grid-rows-2 auto-cols-auto sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                             <dt>
                                 <p class="text-base font-medium text-gray-500 truncate">Utilization Rate</p>
                             </dt>
                             <dd>
                                 <p class="text-lg font-semibold text-gray-900">
-                                {util + "%"}
+                                {parseFloat(assetData.rateDetails[lastBlock].utilRate * 100).toFixed(2) + "%"}
                                 </p>
                             </dd>
                         </div>
@@ -496,9 +650,16 @@
                             </dt>
                             <dd>
                                 <p class="text-lg font-semibold text-gray-900">
-                                {parseFloat(assetData.assetDetails[lastBlock].optimalRate * 100).toFixed(2)+"%"}
+                                {parseFloat(assetData.rateDetails[lastBlock].optimalRate).toFixed(2)+"%"}
                                 </p>
                             </dd>
+                        </div>
+                        <div class="grid-cols-subgrid col-span-3">
+                            <div class="p-4 flex-auto">
+                                <!-- <canvas use:chartRender={chartData}></canvas> -->
+                                <canvas bind:this={utilContext} />
+                            </div>
+                        </div>
                     </dl>
                 </div>
         </div>
