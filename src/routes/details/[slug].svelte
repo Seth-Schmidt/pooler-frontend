@@ -650,7 +650,7 @@
                             </dt>
                             <dd>
                                 <p class="text-lg font-semibold text-gray-900">
-                                {parseFloat(assetData.rateDetails[lastBlock].optimalRate).toFixed(2)+"%"}
+                                {parseFloat(assetData.rateDetails[lastBlock].optimalRate * 100).toFixed(2)+"%"}
                                 </p>
                             </dd>
                         </div>
