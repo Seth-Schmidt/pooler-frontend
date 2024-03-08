@@ -156,7 +156,7 @@ onMount(async () => {
           </thead>
           <tbody>
             {#if volumeData}
-            {#each volumeData as asset, index}
+            {#each volumeData.assets as asset, index}
             <tr class={(index + 1)%2 == 0 ? "bg-gray-50" : "bg-white"}>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {index + 1}
@@ -331,8 +331,8 @@ onMount(async () => {
                 {/if}
               </td>
             </tr>
-            {/each}
-            {/if}
+          {/each}
+          {/if}
           </tbody>
       </table>
           </div>
