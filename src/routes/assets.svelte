@@ -161,6 +161,9 @@ onMount(async () => {
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 <div class="text-lg">{asset.name}</div>
                 <div class="">{asset.symbol}</div>
+                {#if asset.isIsolated}
+                <div class="text-sm">Isolated</div>
+                {/if}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <div class="text-lg">{asset.totalAToken.token_supply.toLocaleString('en-US')}</div>
